@@ -1,5 +1,5 @@
-# CatLock
-Project Files for CatLock
+# PussyLocker
+Project Files for PussyLocker
 
 Current Functionality:
 - Watch faces are up
