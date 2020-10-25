@@ -1,2 +1,2 @@
-# TinySmartLock
+# CatLock
 Project Files for TinySmartLock
