@@ -39,6 +39,9 @@ char currentTemp[] = "25.00";
 char thresholdTemp[] = "100.00";
 WiFiClient client;
 
+unsigned long lastConnectionTime = 0;            // last time you connected to the server, in milliseconds
+const unsigned long postingInterval = 10L * 1000L; // delay between updates, in milliseconds
+
 void setup() {
   SerialMonitorInterface.begin(9600);
   WiFi.setPins(8, 2, A3, -1); // VERY IMPORTANT FOR TINYDUINO
@@ -75,23 +78,6 @@ void setup() {
   printWiFiStatus();
 
   SerialMonitorInterface.println("\n Starting connection to server...");
-  if (client.connect(server, 80)){
-    SerialMonitorInterface.println("Connected to server");
-    client.println("POST /device_status HTTP/1.1");
-    client.print("Host: ");
-    client.println(server);
-    client.println("Content-Length: 56");
-    client.println("Content-Type: text/plain;");
-    client.println("User-Agent: ArduinoWiFi/1.1");
-    client.println("Connection: keep-alive");
-    client.println();
-    client.print("Lock Status:");
-    client.println(lockStatus);
-    client.print("Temperature:");
-    client.println(currentTemp);
-    client.print("Threshold:");
-    client.println(thresholdTemp);
-  }
 }
 
 void loop()
@@ -102,13 +88,39 @@ void loop()
     SerialMonitorInterface.write(c);
   }
 
-  if (!client.connected()){
-    SerialMonitorInterface.println();
-    SerialMonitorInterface.println("Disconnecting from server...");
-    client.stop();
-    
-    // do nothing forevermore:
-    while(true);
+  if (millis() - lastConnectionTime > postingInterval) {
+    update_device_status();
+  }
+}
+
+void update_device_status() {
+  // close any connection before send a new request.
+  // This will free the socket on the WiFi shield
+  client.stop();
+  
+  if (client.connect(server, 80)){
+    SerialMonitorInterface.println("Connected to server");
+    //HTTP Headers
+    client.println("POST /device_status HTTP/1.1");
+    client.print("Host: ");
+    client.println(server);
+    client.println("Content-Length: 56");
+    client.println("Content-Type: text/plain");
+    client.println("User-Agent: ArduinoWiFi/1.1");
+    client.println("Connection: keep-alive");
+    client.println();
+    //HTTP Body containing data to be sent to server
+    client.print("Lock Status:");
+    client.println(lockStatus);
+    client.print("Temperature:");
+    client.println(currentTemp);
+    client.print("Threshold:");
+    client.println(thresholdTemp);
+
+    // note the time that the connection was made:
+    lastConnectionTime = millis();
+  } else {
+    SerialMonitorInterface.println("Connection Failed");
   }
 }
 
