@@ -19,6 +19,7 @@
 #include <WiFi101.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ardunio_secrets.h"
 
 /*********************** EDIT THIS SECTION TO MATCH YOUR INFO *************************/
@@ -82,11 +83,40 @@ void setup() {
 
 void loop()
 {
-  char resp[1000];
+  char respLine[50] = "";
   while(client.available()){
     char c = client.read();
-    SerialMonitorInterface.write(c);
+    //SerialMonitorInterface.write(c);
+    //SerialMonitorInterface.println();
+    
+    if (c == '\n') {
+       if (strlen(respLine) != 0){
+          respLine[0] = '\0';
+       }
+    } else if (c != '\r'){
+       appendChar(respLine, c);
+    }
+    //SerialMonitorInterface.println(respLine);
+
+    
+    if (strlen(respLine) == 15){
+      if (startsWith("Threshold:", respLine)){
+        char result[8] = "";
+        strncpy(result, respLine+10, 5);
+        result[strlen(result)] = '\0';
+        SerialMonitorInterface.println(result);
+      }
+    } else if (strlen(respLine) == 13){
+      if (startsWith("Lock:", respLine)){
+          char result[10] = "";
+          strncpy(result, respLine+5, 8);
+          result[strlen(result)] = '\0';
+          SerialMonitorInterface.println(result);
+      }
+    }
   }
+
+  
 
   if (millis() - lastConnectionTime > postingInterval) {
     update_device_status();
@@ -118,6 +148,7 @@ void update_device_status() {
     client.println(",");
     client.print("Threshold:");
     client.println(thresholdTemp);
+    client.println();
 
     // note the time that the connection was made:
     lastConnectionTime = millis();
@@ -154,4 +185,11 @@ char* mystrcat( char* dest, char* src )
      while (*dest) dest++;
      while (*dest++ = *src++);
      return --dest;
+}
+
+bool startsWith(const char *pre, const char *str)
+{
+    size_t lenpre = strlen(pre),
+           lenstr = strlen(str);
+    return lenstr < lenpre ? false : memcmp(pre, str, lenpre) == 0;
 }
