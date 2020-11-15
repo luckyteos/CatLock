@@ -40,7 +40,7 @@ char thresholdTemp[] = "100.00";
 WiFiClient client;
 
 unsigned long lastConnectionTime = 0;            // last time you connected to the server, in milliseconds
-const unsigned long postingInterval = 10L * 1000L; // delay between updates, in milliseconds
+const unsigned long postingInterval = 15L * 1000L; // delay between updates, in milliseconds (15 seconds => milliseconds)
 
 void setup() {
   SerialMonitorInterface.begin(9600);
@@ -104,16 +104,18 @@ void update_device_status() {
     client.println("POST /device_status HTTP/1.1");
     client.print("Host: ");
     client.println(server);
-    client.println("Content-Length: 56");
+    client.println("Content-Length: 58");
     client.println("Content-Type: text/plain");
     client.println("User-Agent: ArduinoWiFi/1.1");
-    client.println("Connection: keep-alive");
+    client.println("Connection: close");
     client.println();
     //HTTP Body containing data to be sent to server
     client.print("Lock Status:");
-    client.println(lockStatus);
+    client.print(lockStatus);
+    client.println(",");
     client.print("Temperature:");
-    client.println(currentTemp);
+    client.print(currentTemp);
+    client.println(",");
     client.print("Threshold:");
     client.println(thresholdTemp);
 
