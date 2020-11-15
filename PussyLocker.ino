@@ -102,8 +102,25 @@ void loop()
     if (strlen(respLine) == 15){
       if (startsWith("Threshold:", respLine)){
         char result[8] = "";
-        strncpy(result, respLine+10, 5);
+        if (respLine[10] == '+'){
+          if (respLine[11] == 'x') {
+            strncpy(result, respLine+12, 3);
+          } else {
+            strncpy(result, respLine+11, 4);
+          }
+        } else if (respLine[10] == '-'){
+          if (respLine[11] == 'x') {
+            result[0] = '-';
+            char buff[8] = "";
+            strncpy(buff, respLine+12, 3);
+            mystrcat(result, buff);
+          } else {
+            strncpy(result, respLine+10, 5);
+          }
+        }
+
         result[strlen(result)] = '\0';
+        
         SerialMonitorInterface.println(result);
       }
     } else if (strlen(respLine) == 13){
