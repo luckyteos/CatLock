@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+//Need dtostrf from avr library to do proper float/double to string conversion
+#include <avr/dtostrf.h>
 #include "ardunio_secrets.h"
 
 /*********************** EDIT THIS SECTION TO MATCH YOUR INFO *************************/
@@ -36,8 +38,8 @@ char wifiPassword[] = SECRET_PASS;  // your network password
 int status = WL_IDLE_STATUS;
 char server[] = "52.0.236.99";
 char lockStatus[] = "Opened";
-char currentTemp[] = "25.00";
-char thresholdTemp[] = "100.00";
+double currentTemp = -25.0;
+double thresholdTemp = -38.0;
 WiFiClient client;
 
 unsigned long lastConnectionTime = 0;            // last time you connected to the server, in milliseconds
@@ -84,6 +86,20 @@ void setup() {
 void loop()
 {
   char respLine[50] = "";
+  double recvThreshold = 0;
+  char thresholdStr[6] = "";
+
+  // Test code to tell if threshold gets updated
+  //if (thresholdTemp < 0) {
+     //dtostrf(thresholdTemp, 5, 1, thresholdStr);
+  //} else if (thresholdTemp < 10) {
+     //dtostrf(thresholdTemp, 3, 1, thresholdStr);
+  //} else {
+     //dtostrf(thresholdTemp, 4, 1, thresholdStr);
+  //}
+  
+  //SerialMonitorInterface.print("Current Threshold: ");
+  //SerialMonitorInterface.println(thresholdStr);
   while(client.available()){
     char c = client.read();
     //SerialMonitorInterface.write(c);
@@ -98,10 +114,10 @@ void loop()
     }
     //SerialMonitorInterface.println(respLine);
 
-    
+    //Result array to store temperature or lock status
+    char result[10] = "";
     if (strlen(respLine) == 15){
       if (startsWith("Threshold:", respLine)){
-        char result[8] = "";
         if (respLine[10] == '+'){
           if (respLine[11] == 'x') {
             strncpy(result, respLine+12, 3);
@@ -120,20 +136,28 @@ void loop()
         }
 
         result[strlen(result)] = '\0';
+        recvThreshold = atof(result);
+
+        if (thresholdTemp != recvThreshold) {
+            thresholdTemp = recvThreshold;
+        }
         
-        SerialMonitorInterface.println(result);
+        //SerialMonitorInterface.println(result);
       }
     } else if (strlen(respLine) == 13){
       if (startsWith("Lock:", respLine)){
-          char result[10] = "";
           strncpy(result, respLine+5, 8);
           result[strlen(result)] = '\0';
-          SerialMonitorInterface.println(result);
+          //SerialMonitorInterface.println(result);
+
+          if (strcmp(result, "Unlocked") == 0) {
+             SerialMonitorInterface.println("Unlock Lock");
+          } else if (strcmp(result, "Locked") == 0){
+             SerialMonitorInterface.println("Lock lock");
+          }
       }
     }
   }
-
-  
 
   if (millis() - lastConnectionTime > postingInterval) {
     update_device_status();
@@ -147,24 +171,54 @@ void update_device_status() {
   
   if (client.connect(server, 80)){
     SerialMonitorInterface.println("Connected to server");
+    char tempStr[6] = "";
+    char thresholdStr[6] = "";
+    char contentLen[3] = "";
+    char lenHeader[20] = "Content-Length: ";
+
+    if (currentTemp < 0){
+       dtostrf(currentTemp, 5, 1, tempStr);
+       strncpy(contentLen, "70", 2);
+    } else if (currentTemp < 10) {
+       dtostrf(currentTemp, 3, 1, tempStr);
+       strncpy(contentLen, "68", 2);
+    } else {
+       dtostrf(currentTemp, 4, 1, tempStr);
+       strncpy(contentLen, "69", 2);
+    }
+    
+    if (thresholdTemp < 0) {
+       dtostrf(thresholdTemp, 5, 1, thresholdStr);
+       strncpy(contentLen, "70", 2);
+    } else if (thresholdTemp < 10) {
+       dtostrf(thresholdTemp, 3, 1, thresholdStr);
+       strncpy(contentLen, "68", 2);
+    } else {
+       dtostrf(thresholdTemp, 4, 1, thresholdStr);
+       strncpy(contentLen, "69", 2);
+    }
+
+    mystrcat(lenHeader, contentLen);
+    
     //HTTP Headers
     client.println("POST /device_status HTTP/1.1");
     client.print("Host: ");
     client.println(server);
-    client.println("Content-Length: 58");
+    client.println(lenHeader);
     client.println("Content-Type: text/plain");
     client.println("User-Agent: ArduinoWiFi/1.1");
     client.println("Connection: close");
     client.println();
     //HTTP Body containing data to be sent to server
-    client.print("Lock Status:");
+    client.print("{\"Lock Status\":\"");
     client.print(lockStatus);
-    client.println(",");
-    client.print("Temperature:");
-    client.print(currentTemp);
-    client.println(",");
-    client.print("Threshold:");
-    client.println(thresholdTemp);
+    client.print("\",");
+    client.print("\"Temperature\":\"");
+    client.print(tempStr);
+    client.print("\",");
+    client.print("\"Threshold\":\"");
+    client.print(thresholdStr);
+    client.println("\"}");
     client.println();
 
     // note the time that the connection was made:
