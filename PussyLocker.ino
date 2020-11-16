@@ -1,18 +1,4 @@
-/*
-  TinyDuino WiFi TinyShield Example Sketch
-
-  Just a basic tutorial showing you how to connect to WiFi with the Wifi
-  TinyShield
-
-  NOTE: There are a couple things you'll need to change for this to work!
-
-  Written 29 May 2018
-  By Laverena Wienclaw
-  Modified 07 January 2019
-  By Hunter Hykes
-
-  https://TinyCircuits.com
-*/
+/*PussyLocker 1.01*/
 
 // This library is for the wifi connection
 #include <SPI.h>
@@ -36,14 +22,14 @@ char wifiPassword[] = SECRET_PASS;  // your network password
 #endif
 
 int status = WL_IDLE_STATUS;
-char server[] = "52.0.236.99";
-char lockStatus[] = "Opened";
+char server[] = SERVER_IP;
+char lockStatus[] = "Locked";
 double currentTemp = -25.0;
 double thresholdTemp = -38.0;
 WiFiClient client;
 
 unsigned long lastConnectionTime = 0;            // last time you connected to the server, in milliseconds
-const unsigned long postingInterval = 15L * 1000L; // delay between updates, in milliseconds (15 seconds => milliseconds)
+const unsigned long postingInterval = 30L * 1000L; // delay between updates, in milliseconds (30 seconds => milliseconds)
 
 void setup() {
   SerialMonitorInterface.begin(9600);
@@ -62,19 +48,6 @@ void setup() {
     // wait 10 seconds for connection:
     delay(10000);
   }
-
-  // Attempt to connect to Wifi network:
-  //SerialMonitorInterface.print("Connecting Wifi: ");
-  //SerialMonitorInterface.println(ssid);
-
-  // Connect to WiFi, and loop until connection is secured
-  //WiFi.begin(ssid, wifiPassword);
-  //while (WiFi.status() != WL_CONNECTED){
-    //SerialMonitorInterface.print(".");
-    //delay(500);
-  //}
-    
-
   // Print out the local IP address
   SerialMonitorInterface.println("");
   SerialMonitorInterface.println("WiFi connected");
@@ -88,18 +61,7 @@ void loop()
   char respLine[50] = "";
   double recvThreshold = 0;
   char thresholdStr[6] = "";
-
-  // Test code to tell if threshold gets updated
-  //if (thresholdTemp < 0) {
-     //dtostrf(thresholdTemp, 5, 1, thresholdStr);
-  //} else if (thresholdTemp < 10) {
-     //dtostrf(thresholdTemp, 3, 1, thresholdStr);
-  //} else {
-     //dtostrf(thresholdTemp, 4, 1, thresholdStr);
-  //}
   
-  //SerialMonitorInterface.print("Current Threshold: ");
-  //SerialMonitorInterface.println(thresholdStr);
   while(client.available()){
     char c = client.read();
     //SerialMonitorInterface.write(c);
@@ -117,6 +79,7 @@ void loop()
     //Result array to store temperature or lock status
     char result[10] = "";
     if (strlen(respLine) == 15){
+      // Logic to parse the temperature properly
       if (startsWith("Threshold:", respLine)){
         if (respLine[10] == '+'){
           if (respLine[11] == 'x') {
@@ -152,7 +115,15 @@ void loop()
 
           if (strcmp(result, "Unlocked") == 0) {
              SerialMonitorInterface.println("Unlock Lock");
-          } else if (strcmp(result, "Locked") == 0){
+          }
+      }
+    } else if (strlen(respLine) == 11){
+      if (startsWith("Lock:", respLine)){
+          strncpy(result, respLine+5, 6);
+          result[strlen(result)] = '\0';
+          //SerialMonitorInterface.println(result);
+
+          if (strcmp(result, "Locked") == 0) {
              SerialMonitorInterface.println("Lock lock");
           }
       }
@@ -175,29 +146,10 @@ void update_device_status() {
     char thresholdStr[6] = "";
     char contentLen[3] = "";
     char lenHeader[20] = "Content-Length: ";
+    char bodyText[100] = "";
 
-    if (currentTemp < 0){
-       dtostrf(currentTemp, 5, 1, tempStr);
-       strncpy(contentLen, "70", 2);
-    } else if (currentTemp < 10) {
-       dtostrf(currentTemp, 3, 1, tempStr);
-       strncpy(contentLen, "68", 2);
-    } else {
-       dtostrf(currentTemp, 4, 1, tempStr);
-       strncpy(contentLen, "69", 2);
-    }
-    
-    if (thresholdTemp < 0) {
-       dtostrf(thresholdTemp, 5, 1, thresholdStr);
-       strncpy(contentLen, "70", 2);
-    } else if (thresholdTemp < 10) {
-       dtostrf(thresholdTemp, 3, 1, thresholdStr);
-       strncpy(contentLen, "68", 2);
-    } else {
-       dtostrf(thresholdTemp, 4, 1, thresholdStr);
-       strncpy(contentLen, "69", 2);
-    }
-
+    //Convert length of request body into a string for appending
+    itoa(makeRequestBody(bodyText), contentLen, 10);
     mystrcat(lenHeader, contentLen);
     
     //HTTP Headers
@@ -210,22 +162,53 @@ void update_device_status() {
     client.println("Connection: close");
     client.println();
     //HTTP Body containing data to be sent to server
-    client.print("{\"Lock Status\":\"");
-    client.print(lockStatus);
-    client.print("\",");
-    client.print("\"Temperature\":\"");
-    client.print(tempStr);
-    client.print("\",");
-    client.print("\"Threshold\":\"");
-    client.print(thresholdStr);
-    client.println("\"}");
+    client.println(bodyText);
     client.println();
-
+    
     // note the time that the connection was made:
     lastConnectionTime = millis();
   } else {
     SerialMonitorInterface.println("Connection Failed");
   }
+}
+
+int makeRequestBody(char * bodyStr){
+    char tempStr[6] = "";
+    char thresholdStr[6] = "";
+    
+    processTempString(currentTemp, tempStr);
+    processTempString(thresholdTemp, thresholdStr);
+
+    SerialMonitorInterface.print("Temp: ");
+    SerialMonitorInterface.println(tempStr);
+    SerialMonitorInterface.print("Thres: ");
+    SerialMonitorInterface.println(thresholdStr);
+
+    mystrcat(bodyStr, "{\"Lock Status\":\"");
+    mystrcat(bodyStr, lockStatus);
+    mystrcat(bodyStr, "\",");
+    mystrcat(bodyStr, "\"Temperature\":\"");
+    mystrcat(bodyStr, tempStr);
+    mystrcat(bodyStr, "\",");
+    mystrcat(bodyStr, "\"Threshold\":\"");
+    mystrcat(bodyStr, thresholdStr);
+    mystrcat(bodyStr, "\"}");
+
+    return strlen(bodyStr);
+}
+
+void processTempString(double tempType, char * tempStr) {
+    if (tempType < 0){
+       if (tempType > -10){
+          dtostrf(tempType, 4, 1, tempStr);
+       } else{
+          dtostrf(tempType, 5, 1, tempStr);
+       }
+    } else if (tempType < 10) {
+       dtostrf(tempType, 3, 1, tempStr);
+    } else {
+       dtostrf(tempType, 4, 1, tempStr);
+    }
 }
 
 void printWiFiStatus() {
