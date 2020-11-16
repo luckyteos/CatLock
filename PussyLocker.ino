@@ -101,9 +101,16 @@ void loop()
         result[strlen(result)] = '\0';
         recvThreshold = atof(result);
 
+        SerialMonitorInterface.print("Current Threshold: ");
+        SerialMonitorInterface.println(thresholdTemp);
+        
+
         if (thresholdTemp != recvThreshold) {
             thresholdTemp = recvThreshold;
         }
+
+        SerialMonitorInterface.print("New Threshold: ");
+        SerialMonitorInterface.println(thresholdTemp);
         
         //SerialMonitorInterface.println(result);
       }
@@ -179,10 +186,10 @@ int makeRequestBody(char * bodyStr){
     processTempString(currentTemp, tempStr);
     processTempString(thresholdTemp, thresholdStr);
 
-    SerialMonitorInterface.print("Temp: ");
-    SerialMonitorInterface.println(tempStr);
-    SerialMonitorInterface.print("Thres: ");
-    SerialMonitorInterface.println(thresholdStr);
+    //SerialMonitorInterface.print("Temp: ");
+    //SerialMonitorInterface.println(tempStr);
+    //SerialMonitorInterface.print("Thres: ");
+    //SerialMonitorInterface.println(thresholdStr);
 
     mystrcat(bodyStr, "{\"Lock Status\":\"");
     mystrcat(bodyStr, lockStatus);
