@@ -23,13 +23,13 @@ char wifiPassword[] = SECRET_PASS;  // your network password
 
 int status = WL_IDLE_STATUS;
 char server[] = SERVER_IP;
-char lockStatus[] = "Locked";
-double currentTemp = -25.0;
-double thresholdTemp = -38.0;
+char lockStatus[10] = "Locked";
+double currentTemp = 28.0;
+double thresholdTemp = 80.0;
 WiFiClient client;
 
 unsigned long lastConnectionTime = 0;            // last time you connected to the server, in milliseconds
-const unsigned long postingInterval = 30L * 1000L; // delay between updates, in milliseconds (30 seconds => milliseconds)
+const unsigned long postingInterval = 5L * 1000L; // delay between updates, in milliseconds (30 seconds => milliseconds)
 
 void setup() {
   SerialMonitorInterface.begin(9600);
@@ -122,6 +122,8 @@ void loop()
 
           if (strcmp(result, "Unlocked") == 0) {
              SerialMonitorInterface.println("Unlock Lock");
+             lockStatus[0] = '\0';
+             strncpy(lockStatus, "Unlocked", 9);
           }
       }
     } else if (strlen(respLine) == 11){
@@ -132,8 +134,18 @@ void loop()
 
           if (strcmp(result, "Locked") == 0) {
              SerialMonitorInterface.println("Lock lock");
+             lockStatus[0] = '\0';
+             strncpy(lockStatus, "Locked", 7);
           }
       }
+    }
+  }
+
+  if (currentTemp > thresholdTemp){
+    //Unlock Lock
+    if(strcmp(lockStatus, "Unlocked") != 0){
+      lockStatus[0] = '\0';
+      strncpy(lockStatus, "Unlocked", 9);
     }
   }
 
