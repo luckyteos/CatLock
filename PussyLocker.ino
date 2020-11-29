@@ -247,12 +247,14 @@ void printWiFiStatus() {
   SerialMonitorInterface.println(" dBm");
 }
 
+// Credits to Fantastic Mr Fox for his answer from the stack overflow post at link: https://stackoverflow.com/questions/34055713/how-to-add-a-char-int-to-an-char-array-in-c
 void appendChar(char *s, char c) {
   int len = strlen(s);
   s[len] = c;
   s[len+1] = '\0';
 }
 
+// Credits to Joshua Taylor for his answer from the stack overflow post at link: https://stackoverflow.com/questions/21880730/c-what-is-the-best-and-fastest-way-to-concatenate-strings
 char* mystrcat( char* dest, char* src )
 {
      while (*dest) dest++;
@@ -260,6 +262,7 @@ char* mystrcat( char* dest, char* src )
      return --dest;
 }
 
+//Credits to T.J. Crowder for his answer from the stack overflow post at link: https://stackoverflow.com/questions/4770985/how-to-check-if-a-string-starts-with-another-string-in-c
 bool startsWith(const char *pre, const char *str)
 {
     size_t lenpre = strlen(pre),
