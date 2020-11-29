@@ -1,0 +1,86 @@
+body {
+    background-color: #1e1e1e !important;
+    color: rgba(255,255,255,0.87) !important;
+    overflow-x: hidden;
+}
+
+.navbar {
+    background-color: rgb(45,45,48);
+}
+
+#sidebarMenu {
+    background-color: rgb(41, 41, 41);
+}
+
+.sidebar-heading {
+    color: rgb(174, 174, 174);
+}
+
+.nav-link:link, .nav-link:visited {
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.87);
+}
+
+.nav-link:hover {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.nav-link:active {
+    text-shadow: 4px 4px 6px #000000;
+}
+
+a:hover {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.active {
+    font-weight: bold;
+}
+
+.card {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    width: 18rem;
+}
+
+.card:hover {
+    background-color: rgba(255, 255, 255, 0.09) !important;
+    cursor: pointer;
+}
+
+.card:active {
+    background-color: rgba(255, 255, 255, 0.09) !important;
+    cursor: pointer;
+    border: 1px solid white !important;
+}
+
+.card-top {
+    background-color: rgba(255, 255, 255, 0.07);
+    height: 200px;
+    align-items: center;
+}
+
+.card-text {
+    color: rgba(255,255,255,0.60);
+}
+
+.red {
+    color: #dc3545;
+    font-weight: bolder;
+}
+
+.green {
+    color: #28a745;
+    font-weight: bolder;
+}
+
+.blue {
+    color: rgba(0,122,204,0.87);
+    font-weight: bolder;
+}
+
+@media only screen and (max-width: 767px) {
+    #sidebarMenu {
+        z-index: 1021;
+        top: 0px;
+    }
+}

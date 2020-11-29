@@ -1,0 +1,5 @@
+ErrorDocument 404 /404.php
+
+<IfModule dir_module>
+    DirectoryIndex /Dashboard.php
+</IfModule>
